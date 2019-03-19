@@ -71,8 +71,6 @@ function Game(canvas, time, max_bacteria = 10) {
 
   this._init_bacteria_colours();
 
-  this._prepare_sound();
-
   this._set_handlers();
   this.draw();
 }
@@ -378,13 +376,6 @@ Game.prototype.build_click = function() {
         break;
       }
     }
-    if (hit) {
-      game.sound.hit.currentTime = 0;
-      game.sound.hit.play();
-    } else {
-      game.sound.miss.currentTime = 0;
-      game.sound.miss.play();
-    }
     game.draw();
   };
 }
@@ -514,14 +505,6 @@ Game.prototype._set_handlers = function() {
   this.canvas.addEventListener('contextmenu', this.build_contextmenu());
   this.canvas.addEventListener('mousedown', this.build_mousedown());
   this.canvas.addEventListener('mouseup', this.build_mouseup());
-}
-
-/** Prepares the sound items.
-*/
-Game.prototype._prepare_sound = function() {
-  this.sound = {};
-  this.sound.hit = document.getElementById("hit");
-  this.sound.miss = document.getElementById("miss");
 }
 
 /** Starts the game loop.
