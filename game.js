@@ -88,9 +88,6 @@ Game.prototype._init_gl = function() {
   gl.enable(gl.CULL_FACE);
   gl.cullFace(gl.BACK);
 
-  var vs_source = document.getElementById("vertex_shader").innerHTML;
-  var fs_source = document.getElementById("fragment_shader").innerHTML;
-
   var uniforms = [
     "modelMatrix",
     "viewMatrix",
@@ -121,7 +118,7 @@ Game.prototype._init_gl = function() {
   ];
 
   this.gle = new GLEnvironment(gl,
-      vs_source, fs_source,
+      vertexShaderCode, fragmentShaderCode,
       uniforms, attributes);
 
   gl.useProgram(this.gle.shader);
