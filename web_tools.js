@@ -23,18 +23,22 @@
 // SOFTWARE.
 
 
-/** The application's entry point.
+/** Gets the cumulative offset from the window.
+
+    Parameters:
+      element: The element to computer the offset for.
+
+    Returns:
+      A point object with the x offset and the y offset.
 */
-function main(){
-  var canvas = document.getElementById("gl-test");
-  document.body.style.margin = 0;
-  canvas.width = document.body.clientWidth;
-  canvas.height = document.body.clientHeight;
+function element_offset(element) {
+  var x = 0;
+  var y = 0;
 
-  (new Game(canvas)).start();
+  while (element != null){
+    x += element.offsetTop;
+    y += element.offsetLeft;
+    element = element.parentElement;
+  }
+  return {x:x, y:y};
 }
-
-window.addEventListener("load", function(){
-  main();
-  console.log("Done!");
-}, false);
