@@ -1,5 +1,3 @@
-"use strict";
-
 // MIT License
 
 // Copyright (c) 2016 Trevor Barnwell
