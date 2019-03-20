@@ -24,7 +24,7 @@
 /** The application's entry point.
 */
 function main(){
-  var canvas = document.getElementById("gl-test");
+  var canvas = document.getElementById("game-surface");
   document.body.style.margin = 0;
   canvas.width = document.body.clientWidth;
   canvas.height = document.body.clientHeight;

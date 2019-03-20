@@ -20,15 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-
-/** The game.
-
-    Parameters:
-      canvas: (optional) The canvas to use.
-      time: (optional) The time remaining (since EPOCH).
-      max_bacteria: (optional) The maximum number of bacteria.
-*/
-function Game(canvas, time, max_bacteria = 10) {
+function Game(canvas, max_bacteria = 10) {
   if (canvas == null) {
     this.canvas = document.createElement("canvas");
     this.canvas.width = document.body.clientWidth;
@@ -54,9 +46,6 @@ function Game(canvas, time, max_bacteria = 10) {
   this.ball = new Sphere(this.gle, this.sphere_resolution);
   this.bacterium = [];
 
-  this.underlay = new GameUnderlay(
-      this.gle, 0, time || (new Date(new Date(0,0,0,0,5,0,999) - EPOCH)));
-
   this._init_view();
   this._init_projection();
 
@@ -78,7 +67,6 @@ function Game(canvas, time, max_bacteria = 10) {
 Game.prototype._init_gl = function() {
   var gl = this.canvas.getContext("webgl");
 
-  // We should never see this though.
   gl.clearColor(this.clearColor[0],
                 this.clearColor[1],
                 this.clearColor[2],
@@ -95,7 +83,6 @@ Game.prototype._init_gl = function() {
 
     "one_colour",
     "single_colour",
-    "use_texture",
 
     "light_point",
     "light_colour",
@@ -103,18 +90,13 @@ Game.prototype._init_gl = function() {
     "light_ambient",
     "light_diffuse",
     "light_specular",
-
-    "tex_coord",
-
-    "fs_texture_sampler"
   ];
 
   var attributes = [
     "point",
     "colour",
 
-    "normal",
-    "tex_coord"
+    "normal"
   ];
 
   this.gle = new GLEnvironment(gl,
@@ -123,9 +105,7 @@ Game.prototype._init_gl = function() {
 
   gl.useProgram(this.gle.shader);
   gl.uniform1f(this.gle.uniforms.one_colour, 0.0);
-  gl.uniform1f(this.gle.uniforms.use_texture, 0.0);
 
-  gl.disableVertexAttribArray(this.gle.attributes.tex_coord);
 }
 
 /** Initializes the view matrix.
@@ -181,13 +161,11 @@ Game.prototype._init_bacteria_colours = function() {
     Parameters:
       ui: (optional) If set to false the ui will not be drawn.
 */
-Game.prototype.draw = function(ui=true) {
+Game.prototype.draw = function() {
   var gle = this.gle;
   var gl = gle.gl;
 
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-  if (ui) this.underlay.draw();
 
   gl.uniformMatrix4fv(gle.uniforms.viewMatrix, false, this.viewMatrix);
   gl.uniformMatrix4fv(gle.uniforms.projectionMatrix, false,
@@ -235,29 +213,6 @@ Game.prototype._next_id = function() {
   return id;
 }
 
-/** Updates the count down time.
-*/
-Game.prototype._update_time = function() {
-  if (this.last_time == null) return;
-
-  var now = new Date();
-
-  var time_difference = (now - this.last_time);
-  var new_time_remaining = new Date(this.underlay.time - time_difference);
-
-  if (time_difference > 1000 ||
-      new_time_remaining.getMilliseconds() <
-          this.underlay.time.getMilliseconds()) {
-    this.underlay.update();
-  }
-
-  this.underlay.time = new_time_remaining;
-  if (this.underlay.time < TIME_ZERO) {
-    this.underlay.time = TIME_ZERO;
-  }
-
-  this.last_time = now;
-}
 
 /** Spawns new bacteria if permitted.
 */
@@ -305,7 +260,7 @@ Game.prototype._spawn_bacteria = function() {
 /** Grows any small bacteria.
 */
 Game.prototype._grow_bacteria = function() {
-  var plus_scalar = 0.00008;
+  var plus_scalar = 0.0005;
   var plus = vec3.fromValues(plus_scalar, plus_scalar, plus_scalar);
   var maximum= plus_scalar *  5000;
 
@@ -329,7 +284,6 @@ Game.prototype.build_tick = function() {
       window.orequestAnimationFrame;
 
   var tick = function() {
-    game._update_time();
     game._spawn_bacteria();
     game._grow_bacteria();
     game.draw();
@@ -366,8 +320,6 @@ Game.prototype.build_click = function() {
         hit = true;
         game.bacterium.splice(i, 1);
         game.bacterium_ids.add(id);
-        if (game.underlay.time > TIME_ZERO) game.underlay.score++;
-        game.underlay.update();
         break;
       }
     }
@@ -505,6 +457,5 @@ Game.prototype._set_handlers = function() {
 /** Starts the game loop.
 */
 Game.prototype.start = function() {
-  this.last_time = new Date();
   this.build_tick()();
 }
