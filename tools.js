@@ -20,15 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-
-/** The begining of time (as JS views it).
-*/
-var EPOCH = new Date(0, 0, 0, 0, 0, 0, 0);
-
-/** A Time difference of zero.
-*/
-var TIME_ZERO = new Date(EPOCH - EPOCH);
-
 /** Converts an id to a colour suitable for OpenGL.
 
     Parameters:
