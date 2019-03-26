@@ -1,6 +1,6 @@
 // MIT License
 
-// Copyright (c) 2016 Trevor Barnwell
+// Copyright (c) 2019 Blake McDonald, Panteli Marinis, Trevor Barnwell
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,23 +20,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-
-/** The application's entry point.
-*/
 var main = function(){
-  var max_bacteria = 10;
+  var maxBacteria = 10;
   var canvas = document.getElementById("game-surface");
   document.body.style.margin = 0;
   canvas.width = document.body.clientWidth;
   canvas.height = document.body.clientHeight;
 
   // Lighting location and colour
-  let light_point = vec3.fromValues(2.0, 2.0, 2.0);
-  let light_colour = vec3.fromValues(1.0, 1.0, 1.0);
+  let lightPoint = vec3.fromValues(2.0, 2.0, 2.0);
+  let lightColour = vec3.fromValues(1.0, 1.0, 1.0);
 
-  let sphere_resolution = 5;
+  let sphereRes = 5;
 
-  let arc_ball = {
+  let arcBall = {
     centre: vec2.fromValues(canvas.width / 2, canvas.height / 2),
     radius: (Math.min(canvas.width, canvas.height) - 10) / 2.0
   };
@@ -78,23 +75,23 @@ var main = function(){
     "normal"
   ];
 
-  let gle = new GLEnvironment(gl,
+  let glEnv = new GLEnvironment(gl,
       vertexShaderCode, fragmentShaderCode,
       uniforms, attributes);
 
-  gl.useProgram(gle.shader);
-  gl.uniform1f(gle.uniforms.one_colour, 0.0);
+  gl.useProgram(glEnv.shader);
+  gl.uniform1f(glEnv.uniforms.one_colour, 0.0);
 
-  let ball = new Sphere(gle, sphere_resolution);
+  let ball = new Sphere(glEnv, sphereRes);
   let bacterium = [];
 
   // View Matrix Initialization
-  let look_from = [0.0, 0.0, 3.0];
-  let look_at = [0.0, 0.0, 0.0];
+  let lookFrom = [0.0, 0.0, 3.0];
+  let lookAt = [0.0, 0.0, 0.0];
   let up = [0.0, 1.0, 0.0];
 
   let viewMatrix = mat4.create();
-  mat4.lookAt(viewMatrix, look_from, look_at, up);
+  mat4.lookAt(viewMatrix, lookFrom, lookAt, up);
 
   // Projection Matrix Initialization
   var fov = glMatrix.toRadian(60);
@@ -107,86 +104,90 @@ var main = function(){
   let projectionMatrix = mat4.create();
   mat4.perspective(projectionMatrix, fov, aspect, near, far);
 
-  let bacterium_ids = new Set();
-  for (var i = 0; i < max_bacteria; i++) {
-    bacterium_ids.add(i + 2);
+  let bacteriumIds = new Set();
+  for (var i = 0; i < maxBacteria; i++) {
+    bacteriumIds.add(i + 2);
   }
 
-  max_bacteria = bacterium_ids.size;
+  maxBacteria = bacteriumIds.size;
 
-  var bacteria_colour_map = new Map();
-  let id_counter = 2;
+  // Map for bacteria colours
+  var bacColMap = new Map();
 
-  var id_iterate = bacterium_ids.entries();
+  var idIterate = bacteriumIds.entries();
 
-  for (let i = 0; i < bacterium_ids.size; i++) {
-    let hue =  i * 360.0 / bacterium_ids.size;
+  for (let i = 0; i < bacteriumIds.size; i++) {
+    let hue =  i * 360.0 / bacteriumIds.size;
 
     let stop = hsl2rgb([hue, 1.0, 0.8 - 0.2 * (i % 2)]);
     let start = hsl2rgb([hue, 1.0, 0.4 - 0.2 * (i % 2)]);
 
-    bacteria_colour_map.set(id_iterate.next().value[0], [
+    bacColMap.set(idIterate.next().value[0], [
       vec4.fromValues(start[0], start[1], start[2], 1.0),
       vec4.fromValues(stop[0], stop[1], stop[2], 1.0)
     ]);
   }
 
   // Add mouse handlers to Canvas
-  canvas.addEventListener('click', build_click());
-  canvas.addEventListener('mousemove', build_mousemove());
-  canvas.addEventListener('mousedown', build_mousedown());
-  canvas.addEventListener('mouseup', build_mouseup());
+  canvas.addEventListener('click', click());
+  canvas.addEventListener('mousemove', mouseMove());
+  canvas.addEventListener('mousedown', mouseDown());
+  canvas.addEventListener('mouseup', mouseUp());
+  // Disable context menu
+  document.oncontextmenu = function() {
+    return false;
+  }
 
   draw();
 
   function draw() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    gl.uniformMatrix4fv(gle.uniforms.viewMatrix, false, viewMatrix);
-    gl.uniformMatrix4fv(gle.uniforms.projectionMatrix, false,
+    gl.uniformMatrix4fv(glEnv.uniforms.viewMatrix, false, viewMatrix);
+    gl.uniformMatrix4fv(glEnv.uniforms.projectionMatrix, false,
                         projectionMatrix);
 
-    gl.uniform3fv(gle.uniforms.light_point, light_point);
-    gl.uniform3fv(gle.uniforms.light_colour, light_colour);
+    gl.uniform3fv(glEnv.uniforms.light_point, lightPoint);
+    gl.uniform3fv(glEnv.uniforms.light_colour, lightColour);
 
     ball.draw();
 
     bacterium.forEach(function(bacteria){bacteria.draw();});
   }
 
-  function false_draw() {
-    gl.uniform1f(gle.uniforms.one_colour, 1.0);
+  function falseDraw() {
+    gl.uniform1f(glEnv.uniforms.one_colour, 1.0);
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     draw();
     gl.clearColor(clearColor[0],
                   clearColor[1],
                   clearColor[2],
                   clearColor[3]);
-    gl.uniform1f(gle.uniforms.one_colour, 0.0);
+    gl.uniform1f(glEnv.uniforms.one_colour, 0.0);
 }
-    function _next_id() {
-      var bucket = Array.from(bacterium_ids);
+    function nextId() {
+      var bucket = Array.from(bacteriumIds);
       var id = bucket[Math.floor(Math.random() * bucket.length)];
 
-      bacterium_ids.delete(id);
+      bacteriumIds.delete(id);
       return id;
     }
 
-  function _spawn_bacteria() {
+  function spawnBacteria() {
     var frequency = 64;
     var radius = 0.05;
 
-    if (Math.random() < 1.0 / frequency && bacterium.length < max_bacteria) {
+    if (Math.random() < 1.0 / frequency && bacterium.length < maxBacteria) {
       var r = vec3.fromValues(Math.random() - 0.5,
                               Math.random() - 0.5,
                               Math.random() - 0.5);
       vec3.normalize(r, r);
 
-      var id = _next_id();
-      var colours = bacteria_colour_map.get(id);
+      var id = nextId();
+      var colours = bacColMap.get(id);
 
-      var bacteria = new Sphere(gle,
-                                sphere_resolution,
+      var bacteria = new Sphere(glEnv,
+                                sphereRes,
                                 r,
                                 radius,
                                 colours[0],
@@ -212,14 +213,14 @@ var main = function(){
     }
   }
 
-  function _grow_bacteria() {
-    var plus_scalar = 0.0005;
-    var plus = vec3.fromValues(plus_scalar, plus_scalar, plus_scalar);
-    var maximum= plus_scalar *  5000;
+  function growBacteria() {
+    var incScalar = 0.0005;
+    var inc = vec3.fromValues(incScalar, incScalar, incScalar);
+    var max = incScalar *  5000;
 
     bacterium.forEach(function(bacteria){
-      if (bacteria.scale[0] < maximum) {
-        vec3.add(bacteria.scale, bacteria.scale, plus);
+      if (bacteria.scale[0] < max) {
+        vec3.add(bacteria.scale, bacteria.scale, inc);
         //vec3.add(bacteria.translation, bacteria.translation, plus);
         bacteria.buildModel();
       }
@@ -227,21 +228,21 @@ var main = function(){
   }
 
   function gameLoop() {
-    _spawn_bacteria();
-    _grow_bacteria();
+    spawnBacteria();
+    growBacteria();
     draw();
 
     requestAnimationFrame(gameLoop);
   }
 
-  function build_click() {
+  function click() {
     return function(event) {
-      var offset = element_offset(event.target);
+      var offset = elementOffset(event.target);
       var x = event.clientX - offset.x;
       var y = event.target.height - (event.clientY - offset.y);
 
       var colour = new Uint8Array(4);
-      false_draw();
+      falseDraw();
       gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, colour);
 
       var id = colour2id(colour);
@@ -252,7 +253,7 @@ var main = function(){
         if (bacterium[i].id == id){
           hit = true;
           bacterium.splice(i, 1);
-          bacterium_ids.add(id);
+          bacteriumIds.add(id);
           break;
         }
       }
@@ -260,90 +261,165 @@ var main = function(){
     };
   }
 
-  function build_mousedown() {
+  function mouseDown() {
     return function(event) {
       if (event.button == 2){
 
-        var offset = element_offset(event.target);
+        var offset = elementOffset(event.target);
 
         var height = event.target.height;
 
         var point = {
-          x: (event.clientX - offset.x) - arc_ball.centre[0],
-          y: (height - (event.clientY - offset.y)) - arc_ball.centre[1],
+          x: (event.clientX - offset.x) - arcBall.centre[0],
+          y: (height - (event.clientY - offset.y)) - arcBall.centre[1],
           z: 0
         };
 
-        arc_ball.matrix_stash = mat4.copy(mat4.create(), viewMatrix);
+        arcBall.matrix_stash = mat4.copy(mat4.create(), viewMatrix);
 
         var d2 = point.x * point.x + point.y * point.y;
-        var r2 = arc_ball.radius * arc_ball.radius;
+        var r2 = arcBall.radius * arcBall.radius;
         if (d2 < r2){
           point.z = Math.sqrt(r2 - d2);
         }
 
-        arc_ball.start = vec3.fromValues(point.x, point.y, point.z);
-        vec3.normalize(arc_ball.start, arc_ball.start);
+        arcBall.start = vec3.fromValues(point.x, point.y, point.z);
+        vec3.normalize(arcBall.start, arcBall.start);
       }
     }
   }
 
-  function build_mousemove() {
+  function mouseMove() {
     return function(event) {
-      if ((event.buttons & 2) == 2 && arc_ball.start != null) {
-        var offset = element_offset(event.target);
+      if ((event.buttons & 2) == 2 && arcBall.start != null) {
+        var offset = elementOffset(event.target);
 
         var height = event.target.height;
 
         var point = {
-          x: (event.clientX - offset.x) - arc_ball.centre[0],
-          y: (height - (event.clientY - offset.y)) - arc_ball.centre[1],
+          x: (event.clientX - offset.x) - arcBall.centre[0],
+          y: (height - (event.clientY - offset.y)) - arcBall.centre[1],
           z: 0
         };
 
         var d2 = point.x * point.x + point.y * point.y;
-        var r2 = arc_ball.radius * arc_ball.radius;
+        var r2 = arcBall.radius * arcBall.radius;
         if (d2 < r2){
           point.z = Math.sqrt(r2 - d2);
         }
 
-        arc_ball.end = vec3.fromValues(point.x, point.y, point.z);
-        vec3.normalize(arc_ball.end, arc_ball.end);
+        arcBall.end = vec3.fromValues(point.x, point.y, point.z);
+        vec3.normalize(arcBall.end, arcBall.end);
 
-        var axis = vec3.cross(vec3.create(), arc_ball.start, arc_ball.end);
-        var angle = Math.acos(vec3.dot(arc_ball.start, arc_ball.end));
+        var axis = vec3.cross(vec3.create(), arcBall.start, arcBall.end);
+        var angle = Math.acos(vec3.dot(arcBall.start, arcBall.end));
 
-        if (vec3.equals(arc_ball.start, arc_ball.end)) {
-          mat4.copy(viewMatrix, arc_ball.matrix_stash);
+        if (vec3.equals(arcBall.start, arcBall.end)) {
+          mat4.copy(viewMatrix, arcBall.matrix_stash);
         } else {
           var transform = mat4.create();
 
           // Translate into ball.
-          var translate_in = mat4.translate(mat4.create(), mat4.create(),
+          var transIn = mat4.translate(mat4.create(), mat4.create(),
                                             vec3.fromValues(0.0, 0.0, 3.0));
 
           var rot = mat4.rotate(mat4.create(), mat4.create(), angle, axis);
 
           // Translate out of ball.
-          var translate_out = mat4.translate(mat4.create(), mat4.create(),
+          var transOut = mat4.translate(mat4.create(), mat4.create(),
                                              vec3.fromValues(0.0, 0.0, -3.0));
 
 
-          mat4.mul(transform, translate_in, transform);
+          mat4.mul(transform, transIn, transform);
           mat4.mul(transform, rot, transform);
-          mat4.mul(transform, translate_out, transform);
-          mat4.mul(viewMatrix, transform, arc_ball.matrix_stash);
+          mat4.mul(transform, transOut, transform);
+          mat4.mul(viewMatrix, transform, arcBall.matrix_stash);
         }
       }
     }
   }
 
-  function build_mouseup() {
+  function mouseUp() {
     return function(event) {
       if ((event.button & 2) == 2){
-        arc_ball.start = undefined;
+        arcBall.start = undefined;
       }
     }
   }
   gameLoop();
+}
+
+// Converts an id to a colour
+function id2colour(id) {
+  if (id > 2<< (8 * 3)) return vec4.fromValues(0.0, 0.0, 0.0, 1.0);
+  var a = (id >> (8 * 0)) & (255);
+  var b = (id >> (8 * 1)) & (255);
+  var c = (id >> (8 * 2)) & (255);
+  return vec4.fromValues(a / 255.0, b / 255.0, c / 255.0, 1.0);
+}
+
+// Converts a colour to an id.
+function colour2id(colour) {
+  return (colour[0] << (8 * 0)) |
+         (colour[1] << (8 * 1)) |
+         (colour[2] << (8 * 2));
+}
+
+// Converts a colour in hsl to rgb.
+function hsl2rgb(hsl) {
+  var h = hsl[0];
+  var s = hsl[1];
+  var l = hsl[2];
+
+  var hp = h / 60;
+  var f = Math.floor(hp);
+  var c = (1 - Math.abs(2 * l - 1)) * s;
+  var x = c * (1 - Math.abs(hp % 2 - 1));
+  var m = l - 0.5 * c;
+
+  var r = m;
+  var g = m;
+  var b = m;
+
+  switch(f) {
+    case 0:
+      r += c;
+      g += x;
+      break;
+    case 1:
+      r += x;
+      g += c;
+      break;
+    case 2:
+      g += c;
+      b += x;
+      break;
+    case 3:
+      g += x;
+      b += c;
+      break;
+    case 4:
+      r += x;
+      b += c;
+      break;
+    case 5:
+      r += c;
+      b += x;
+      break;
+  }
+
+  return [r, g , b];
+}
+
+// Gets the window offset
+function elementOffset(element) {
+  var x = 0;
+  var y = 0;
+
+  while (element != null){
+    x += element.offsetTop;
+    y += element.offsetLeft;
+    element = element.parentElement;
+  }
+  return {x:x, y:y};
 }
