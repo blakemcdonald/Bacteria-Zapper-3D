@@ -37,12 +37,15 @@
 function Sphere(gle, depth, centre, radius, colourStart, colourStop,
     colourAmbient, colourDiffuse, colourSpecular) {
   this.gle = gle;
+  this.centre = centre;
   this.buffers = {};
+  this.radius = radius;
   this.model = mat4.create();
   this.translation = centre || vec3.create();
   this.scale = vec3.fromValues(1.0, 1.0, 1.0);
   this.rotation = mat4.create();
   this.id = 0;
+  this.consuming = [];
 
   if (depth === undefined) depth = 5;
 

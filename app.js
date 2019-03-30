@@ -220,6 +220,7 @@ var main = function(){
 
     bacterium.forEach(function(bacteria){
       if (bacteria.scale[0] < max) {
+        bacteria.radius += incScalar;
         vec3.add(bacteria.scale, bacteria.scale, inc);
         //vec3.add(bacteria.translation, bacteria.translation, plus);
         bacteria.buildModel();
@@ -230,6 +231,8 @@ var main = function(){
   function gameLoop() {
     spawnBacteria();
     growBacteria();
+    collisionCheck();
+    consumeBacteria();
     draw();
 
     requestAnimationFrame(gameLoop);
@@ -341,11 +344,35 @@ var main = function(){
 
   function mouseUp() {
     return function(event) {
+      console.log(bacterium);
       if ((event.button & 2) == 2){
         arcBall.start = undefined;
       }
     }
   }
+
+  function collisionCheck() {
+    if(bacterium.length > 1) {
+      for(let i = 0; i < bacterium.length - 2; i++) {
+          for(let j = i+1; j < bacterium.length; j++) {
+            if(!bacterium[i].consuming.includes(bacterium[j]) && !bacterium[j].consuming.includes(bacterium[i])) {
+              if(distance3D(bacterium[i].centre, bacterium[j].centre) <= bacterium[i].radius + bacterium[j].radius) {
+                if(bacterium[i].radius > bacterium[j].radius){
+                  bacterium[i].consuming.push(bacterium[j]);
+                } else {
+                  bacterium[j].consuming.push(bacterium[i]);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+  function consumeBacteria() {
+
+  }
+
   gameLoop();
 }
 
@@ -422,4 +449,8 @@ function elementOffset(element) {
     element = element.parentElement;
   }
   return {x:x, y:y};
+}
+
+function distance3D(pts1, pts2) {
+  return Math.sqrt(Math.pow(pts2[0]-pts1[0], 2) + Math.pow(pts2[1]-pts1[1], 2) + Math.pow(pts2[2]-pts1[2], 2))
 }
