@@ -1,6 +1,15 @@
 <html>
   <head>
     <title>Bacterial Zapper 3D</title>
+
+    <style>
+      .score-board {
+        position: absolute;
+        left: 1010px;
+        top: -20px;
+      }
+    </style>
+
     <script type="text/javascript" src="app.js"></script>
     <script type="text/javascript" src="sphere.js"></script>
     <script type="text/javascript" src="shaders.js"></script>
@@ -9,8 +18,16 @@
     <script type="text/javascript" src="utils/geometry_tools.js"></script>
   </head>
   <body onload="main();">
-    <canvas id="game-surface" height="480" width="640">
+    <canvas id="game-surface" height="800" width="1000">
       Your browser does not appear to support canvas.
     </canvas>
+    <div class="score-board">
+      <h1> Score: <span id="scoreDisplay"></span></h1>
+      <h3> Bacteria Remaining: <span id="bacRemaining"></span></h3>
+      <h3> Lives left: <span id="lives"></span></h3>
+      <p>Click the 'bacteria' to destroy</p>
+      <p>Each time a bacteria grows too big, you will lose a life</p>
+      <p>Right Click and Drag to move the sphere</p>
+    </div>
   </body>
 </html>

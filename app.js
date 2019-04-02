@@ -22,10 +22,14 @@
 
 var main = function(){
   var maxBacteria = 10;
+  var lives = 2;
+  var bacRemaining = 20;
+  var score = 0;
+  var bacAlive = 0;
   var canvas = document.getElementById("game-surface");
   document.body.style.margin = 0;
-  canvas.width = document.body.clientWidth;
-  canvas.height = document.body.clientHeight;
+  canvas.width = 1000;
+  canvas.height = 800;
 
   // Lighting location and colour
   let lightPoint = vec3.fromValues(2.0, 2.0, 2.0);
@@ -166,27 +170,27 @@ var main = function(){
     gl.uniform1f(glEnv.uniforms.one_colour, 0.0);
 }
     function nextId() {
-      var bucket = Array.from(bacteriumIds);
-      var id = bucket[Math.floor(Math.random() * bucket.length)];
+      let bucket = Array.from(bacteriumIds);
+      let id = bucket[Math.floor(Math.random() * bucket.length)];
 
       bacteriumIds.delete(id);
       return id;
     }
 
   function spawnBacteria() {
-    var frequency = 64;
-    var radius = 0.05;
+    let frequency = 64;
+    let radius = 0.05;
 
     if (Math.random() < 1.0 / frequency && bacterium.length < maxBacteria) {
-      var r = vec3.fromValues(Math.random() - 0.5,
+      let r = vec3.fromValues(Math.random() - 0.5,
                               Math.random() - 0.5,
                               Math.random() - 0.5);
       vec3.normalize(r, r);
 
-      var id = nextId();
-      var colours = bacColMap.get(id);
+      let id = nextId();
+      let colours = bacColMap.get(id);
 
-      var bacteria = new Sphere(glEnv,
+      let bacteria = new Sphere(glEnv,
                                 sphereRes,
                                 r,
                                 radius,
@@ -197,26 +201,26 @@ var main = function(){
                                 0.02);
       bacteria.id = id;
 
-      var pole = vec3.fromValues(0.0, 0.0, 1.0);
+      let pole = vec3.fromValues(0.0, 0.0, 1.0);
 
       if (!vec3.equals(r, pole)) {
-        var axis = vec3.cross(vec3.create(), pole, r);
+        let axis = vec3.cross(vec3.create(), pole, r);
         vec3.normalize(axis, axis);
 
-        var angle = Math.acos(vec3.dot(pole, r));
+        let angle = Math.acos(vec3.dot(pole, r));
         bacteria.rotation = mat4.rotate(mat4.create(), mat4.create(),
                                         angle, axis);
         bacteria.buildModel();
       }
-
+      bacAlive++;
       bacterium.push(bacteria);
     }
   }
 
   function growBacteria() {
-    var incScalar = 0.0005;
-    var inc = vec3.fromValues(incScalar, incScalar, incScalar);
-    var max = incScalar *  5000;
+    let incScalar = 0.0005;
+    let inc = vec3.fromValues(incScalar, incScalar, incScalar);
+    let max = incScalar *  5000;
 
     bacterium.forEach(function(bacteria){
       if (bacteria.scale[0] < max) {
@@ -225,11 +229,25 @@ var main = function(){
         //vec3.add(bacteria.translation, bacteria.translation, plus);
         bacteria.buildModel();
       }
+      if(bacteria.radius >= 0.35) {
+        let id = bacteria.id;
+        bacAlive--;
+        lives--;
+        bacterium.splice(bacterium.indexOf(bacteria), 1);
+        bacteriumIds.add(id);
+      }
     });
   }
 
   function gameLoop() {
-    spawnBacteria();
+
+    document.getElementById('scoreDisplay').innerHTML=score;
+		document.getElementById('bacRemaining').innerHTML=bacRemaining;
+		document.getElementById('lives').innerHTML=lives;
+
+    if(bacRemaining>0+bacAlive) {
+      spawnBacteria();
+    }
     growBacteria();
     collisionCheck();
     consumeBacteria();
@@ -240,21 +258,24 @@ var main = function(){
 
   function click() {
     return function(event) {
-      var offset = elementOffset(event.target);
-      var x = event.clientX - offset.x;
-      var y = event.target.height - (event.clientY - offset.y);
+      let offset = elementOffset(event.target);
+      let x = event.clientX - offset.x;
+      let y = event.target.height - (event.clientY - offset.y);
 
-      var colour = new Uint8Array(4);
+      let colour = new Uint8Array(4);
       falseDraw();
       gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, colour);
 
-      var id = colour2id(colour);
+      let id = colour2id(colour);
 
-      var hit = false;
+      let hit = false;
 
-      for (var i = 0; i < bacterium.length; i++){
+      for (let i = 0; i < bacterium.length; i++){
         if (bacterium[i].id == id){
           hit = true;
+          score += 25;
+          bacRemaining--;
+          bacAlive--;
           bacterium.splice(i, 1);
           bacteriumIds.add(id);
           break;
@@ -268,11 +289,11 @@ var main = function(){
     return function(event) {
       if (event.button == 2){
 
-        var offset = elementOffset(event.target);
+        let offset = elementOffset(event.target);
 
-        var height = event.target.height;
+        let height = event.target.height;
 
-        var point = {
+        let point = {
           x: (event.clientX - offset.x) - arcBall.centre[0],
           y: (height - (event.clientY - offset.y)) - arcBall.centre[1],
           z: 0
@@ -280,8 +301,8 @@ var main = function(){
 
         arcBall.matrix_stash = mat4.copy(mat4.create(), viewMatrix);
 
-        var d2 = point.x * point.x + point.y * point.y;
-        var r2 = arcBall.radius * arcBall.radius;
+        let d2 = point.x * point.x + point.y * point.y;
+        let r2 = arcBall.radius * arcBall.radius;
         if (d2 < r2){
           point.z = Math.sqrt(r2 - d2);
         }
@@ -295,18 +316,18 @@ var main = function(){
   function mouseMove() {
     return function(event) {
       if ((event.buttons & 2) == 2 && arcBall.start != null) {
-        var offset = elementOffset(event.target);
+        let offset = elementOffset(event.target);
 
-        var height = event.target.height;
+        let height = event.target.height;
 
-        var point = {
+        let point = {
           x: (event.clientX - offset.x) - arcBall.centre[0],
           y: (height - (event.clientY - offset.y)) - arcBall.centre[1],
           z: 0
         };
 
-        var d2 = point.x * point.x + point.y * point.y;
-        var r2 = arcBall.radius * arcBall.radius;
+        let d2 = point.x * point.x + point.y * point.y;
+        let r2 = arcBall.radius * arcBall.radius;
         if (d2 < r2){
           point.z = Math.sqrt(r2 - d2);
         }
@@ -314,22 +335,22 @@ var main = function(){
         arcBall.end = vec3.fromValues(point.x, point.y, point.z);
         vec3.normalize(arcBall.end, arcBall.end);
 
-        var axis = vec3.cross(vec3.create(), arcBall.start, arcBall.end);
-        var angle = Math.acos(vec3.dot(arcBall.start, arcBall.end));
+        let axis = vec3.cross(vec3.create(), arcBall.start, arcBall.end);
+        let angle = Math.acos(vec3.dot(arcBall.start, arcBall.end));
 
         if (vec3.equals(arcBall.start, arcBall.end)) {
           mat4.copy(viewMatrix, arcBall.matrix_stash);
         } else {
-          var transform = mat4.create();
+          let transform = mat4.create();
 
           // Translate into ball.
-          var transIn = mat4.translate(mat4.create(), mat4.create(),
+          let transIn = mat4.translate(mat4.create(), mat4.create(),
                                             vec3.fromValues(0.0, 0.0, 3.0));
 
-          var rot = mat4.rotate(mat4.create(), mat4.create(), angle, axis);
+          let rot = mat4.rotate(mat4.create(), mat4.create(), angle, axis);
 
           // Translate out of ball.
-          var transOut = mat4.translate(mat4.create(), mat4.create(),
+          let transOut = mat4.translate(mat4.create(), mat4.create(),
                                              vec3.fromValues(0.0, 0.0, -3.0));
 
 
@@ -344,7 +365,7 @@ var main = function(){
 
   function mouseUp() {
     return function(event) {
-      console.log(bacterium);
+      console.log(bacAlive);
       if ((event.button & 2) == 2){
         arcBall.start = undefined;
       }
@@ -370,7 +391,25 @@ var main = function(){
     }
 
   function consumeBacteria() {
-
+    let decScalar = -0.0030;
+    let dec = vec3.fromValues(decScalar, decScalar, decScalar);
+    for(i in bacterium){
+      for(j in bacterium[i].consuming) {
+        let consumed = bacterium[i].consuming[j];
+        consumed.radius -= 0.0015;
+        vec3.add(consumed.scale, consumed.scale, dec);
+        vec3.add(consumed.translation, consumed.translation, normalize3D(bacterium[i].centre, consumed.centre));
+        //vec3.add(bacteria.translation, bacteria.translation, plus);
+        if(consumed.radius <= 0.0) {
+          let id = consumed.id;
+          bacAlive--;
+          bacterium.splice(bacterium.indexOf(consumed), 1);
+          bacterium[i].consuming.splice(j, 1);
+          bacteriumIds.add(id);
+        }
+        consumed.buildModel();
+      }
+    }
   }
 
   gameLoop();
@@ -379,9 +418,9 @@ var main = function(){
 // Converts an id to a colour
 function id2colour(id) {
   if (id > 2<< (8 * 3)) return vec4.fromValues(0.0, 0.0, 0.0, 1.0);
-  var a = (id >> (8 * 0)) & (255);
-  var b = (id >> (8 * 1)) & (255);
-  var c = (id >> (8 * 2)) & (255);
+  let a = (id >> (8 * 0)) & (255);
+  let b = (id >> (8 * 1)) & (255);
+  let c = (id >> (8 * 2)) & (255);
   return vec4.fromValues(a / 255.0, b / 255.0, c / 255.0, 1.0);
 }
 
@@ -451,6 +490,11 @@ function elementOffset(element) {
   return {x:x, y:y};
 }
 
-function distance3D(pts1, pts2) {
-  return Math.sqrt(Math.pow(pts2[0]-pts1[0], 2) + Math.pow(pts2[1]-pts1[1], 2) + Math.pow(pts2[2]-pts1[2], 2))
+function distance3D(vec1, vec2) {
+  return Math.sqrt(Math.pow(vec2[0]-vec1[0], 2) + Math.pow(vec2[1]-vec1[1], 2) + Math.pow(vec2[2]-vec1[2], 2))
+}
+
+function normalize3D(vec1, vec2) {
+  let m = distance3D(vec1, vec2);
+  return[((vec1[0]-vec2[0])/m)/400, ((vec1[1]-vec2[1])/m)/400, ((vec1[2]-vec2[2])/m)/400];
 }
