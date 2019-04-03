@@ -256,17 +256,19 @@ var main = function(){
     document.getElementById('scoreDisplay').innerHTML=score;
 		document.getElementById('bacRemaining').innerHTML=bacRemaining;
 		document.getElementById('lives').innerHTML=lives;
+    if(!winOrLose()){
 
-    if(bacRemaining>0+bacAlive) {
-      spawnBacteria();
+      if(bacRemaining>0+bacAlive) {
+        spawnBacteria();
+      }
+
+      growBacteria();
+      collisionCheck();
+      consumeBacteria();
+      updateText();
+      draw();
+      requestAnimationFrame(gameLoop);
     }
-    growBacteria();
-    collisionCheck();
-    consumeBacteria();
-    updateText();
-    draw();
-
-    requestAnimationFrame(gameLoop);
   }
 
   function click() {
@@ -282,15 +284,17 @@ var main = function(){
       let id = colour2id(colour);
 
       let hit = false;
+      let scoreInc = 0;
 
       for (let i = 0; i < bacterium.length; i++){
         if (bacterium[i].id == id){
           hit = true;
-          score += 25;
+          scoreInc = Math.round(2/bacterium[i].radius);
+          score += scoreInc
           bacRemaining--;
           bacAlive--;
           clickedPoints.push({
-  					pts: "+25",
+  					pts: "+" + scoreInc,
   					x: event.clientX,
   					y: event.clientY,
   					dY: 0,
@@ -413,7 +417,6 @@ var main = function(){
   function updateText() {
     for(i in clickedPoints) {
       let text = clickedPoints[i];
-
       text.dY--;
 
       if(text.dY <= -50) {
@@ -449,6 +452,28 @@ var main = function(){
         consumed.buildModel();
       }
     }
+  }
+
+  function winOrLose() {
+    if(bacRemaining <= 0) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      clickedPoints = [];
+      ctx.fillStyle = "rgba(0, 255, 0, 1.0)";
+			ctx.font = "80px Verdana";
+			ctx.fillText("You win!", canvas.width/2, canvas.height/2);
+      return true;
+    }
+    if(lives<=0) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      clickedPoints = [];
+      bacterium = [];
+      draw();
+      ctx.fillStyle = "rgba(255, 0, 0, 1.0)";
+			ctx.font = "80px Verdana";
+			ctx.fillText("You Lose.", canvas.width/2, canvas.height/2);
+      return true;
+    }
+    return false;
   }
 
   gameLoop();
