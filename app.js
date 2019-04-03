@@ -200,7 +200,7 @@ var main = function(){
       let id = nextId();
       let colours = bacColMap.get(id);
 
-      if(colours[0]){
+      if(colours){
         let bacteria = new Sphere(glEnv,
                                   sphereRes,
                                   r,
@@ -263,6 +263,7 @@ var main = function(){
     growBacteria();
     collisionCheck();
     consumeBacteria();
+    updateText();
     draw();
 
     requestAnimationFrame(gameLoop);
@@ -288,6 +289,13 @@ var main = function(){
           score += 25;
           bacRemaining--;
           bacAlive--;
+          clickedPoints.push({
+  					pts: "+25",
+  					x: event.clientX,
+  					y: event.clientY,
+  					dY: 0,
+  					color: "rgba(0,200,0,"
+  				});
           bacterium.splice(i, 1);
           bacteriumIds.add(id);
           break;
@@ -377,7 +385,7 @@ var main = function(){
 
   function mouseUp() {
     return function(event) {
-      console.log(bacAlive);
+      console.log(clickedPoints);
       if ((event.button & 2) == 2){
         arcBall.start = undefined;
       }
@@ -401,6 +409,25 @@ var main = function(){
         }
       }
     }
+
+  function updateText() {
+    for(i in clickedPoints) {
+      let text = clickedPoints[i];
+
+      text.dY--;
+
+      if(text.dY <= -50) {
+        clickedPoints.splice(i,1);
+      } else {
+        // Clear canvas only around specific text
+        ctx.clearRect(text.x - 25, text.y + text.dY - 20, text.x + 20, text.y + 20);
+        // Alpha of the points approaches zero as it reaches its max change in y to simulate a fade out
+        ctx.fillStyle = text.color + (1.0 - (text.dY * -0.02) + ")");
+        // Print the points awarded and move them upwards
+        ctx.fillText(text.pts, text.x, text.y + text.dY);
+      }
+    }
+  }
 
   function consumeBacteria() {
     let decScalar = -0.0030;

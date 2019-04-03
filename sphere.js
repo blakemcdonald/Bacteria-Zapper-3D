@@ -51,8 +51,8 @@ function Sphere(gle, depth, centre, radius, colourStart, colourStop,
 
   if (radius !== undefined) vec3.set(this.scale, radius, radius, radius);
 
-  this.colour_start = colourStart || vec4.fromValues(0.0, 0.5, 0.7, 1.0);
-  this.colour_stop = colourStop || vec4.fromValues(0.4, 0.8, 0.9, 1.0);
+  this.colour_start = colourStart || vec4.fromValues(0.6, 0.3, 0.3, 1.0);
+  this.colour_stop = colourStop || vec4.fromValues(0.6, 0.4, 0.3, 1.0);
 
   if (colourAmbient === undefined) colourAmbient = 0.3;
   if (colourDiffuse === undefined) colourDiffuse = 0.5;
