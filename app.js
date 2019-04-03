@@ -26,7 +26,17 @@ var main = function(){
   var bacRemaining = 20;
   var score = 0;
   var bacAlive = 0;
-  var canvas = document.getElementById("game-surface");
+  var clickedPoints = []
+  var canvas = document.getElementById('game-surface');
+
+  // Create 2D Canvas for text
+  var textCanvas = document.getElementById('text');
+  var ctx = textCanvas.getContext('2d')
+
+  // Set font for text Canvas
+  ctx.font = "20px Verdana";
+  ctx.textAlign = "center";
+
   document.body.style.margin = 0;
   canvas.width = 1000;
   canvas.height = 800;
@@ -190,30 +200,32 @@ var main = function(){
       let id = nextId();
       let colours = bacColMap.get(id);
 
-      let bacteria = new Sphere(glEnv,
-                                sphereRes,
-                                r,
-                                radius,
-                                colours[0],
-                                colours[1],
-                                undefined,
-                                undefined,
-                                0.02);
-      bacteria.id = id;
+      if(colours[0]){
+        let bacteria = new Sphere(glEnv,
+                                  sphereRes,
+                                  r,
+                                  radius,
+                                  colours[0],
+                                  colours[1],
+                                  undefined,
+                                  undefined,
+                                  0.02);
+        bacteria.id = id;
 
-      let pole = vec3.fromValues(0.0, 0.0, 1.0);
+        let pole = vec3.fromValues(0.0, 0.0, 1.0);
 
-      if (!vec3.equals(r, pole)) {
-        let axis = vec3.cross(vec3.create(), pole, r);
-        vec3.normalize(axis, axis);
+        if (!vec3.equals(r, pole)) {
+          let axis = vec3.cross(vec3.create(), pole, r);
+          vec3.normalize(axis, axis);
 
-        let angle = Math.acos(vec3.dot(pole, r));
-        bacteria.rotation = mat4.rotate(mat4.create(), mat4.create(),
-                                        angle, axis);
-        bacteria.buildModel();
+          let angle = Math.acos(vec3.dot(pole, r));
+          bacteria.rotation = mat4.rotate(mat4.create(), mat4.create(),
+                                          angle, axis);
+          bacteria.buildModel();
+        }
+        bacAlive++;
+        bacterium.push(bacteria);
       }
-      bacAlive++;
-      bacterium.push(bacteria);
     }
   }
 
