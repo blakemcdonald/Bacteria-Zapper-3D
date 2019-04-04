@@ -155,7 +155,6 @@ var main = function(){
   document.getElementById("lighting").onclick = function(e) {toggleLighting(e)};
 
   function toggleLighting(e) {
-    console.log(e);
     if(gameIsLit){
       gameIsLit = false;
       e.target.textContent = "Off";
