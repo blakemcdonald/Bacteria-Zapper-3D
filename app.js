@@ -26,7 +26,8 @@ var main = function(){
   var bacRemaining = 20;
   var score = 0;
   var bacAlive = 0;
-  var clickedPoints = []
+  var clickedPoints = [];
+  var gameIsLit = true; //🔥
   var canvas = document.getElementById('game-surface');
 
   // Create 2D Canvas for text
@@ -151,6 +152,20 @@ var main = function(){
   document.oncontextmenu = function() {
     return false;
   }
+  document.getElementById("lighting").onclick = function(e) {toggleLighting(e)};
+
+  function toggleLighting(e) {
+    console.log(e);
+    if(gameIsLit){
+      gameIsLit = false;
+      e.target.textContent = "Off";
+      e.target.style.color = "red";
+    } else {
+      gameIsLit = true;
+      e.target.textContent = "On";
+      e.target.style.color = "green";
+    }
+  }
 
   draw();
 
@@ -161,8 +176,12 @@ var main = function(){
     gl.uniformMatrix4fv(glEnv.uniforms.projectionMatrix, false,
                         projectionMatrix);
 
-    gl.uniform3fv(glEnv.uniforms.light_point, lightPoint);
-    gl.uniform3fv(glEnv.uniforms.light_colour, lightColour);
+    if(gameIsLit){
+      gl.uniform3fv(glEnv.uniforms.light_point, lightPoint);
+      gl.uniform3fv(glEnv.uniforms.light_colour, lightColour);
+    } else {
+      gl.uniform3fv(glEnv.uniforms.light_colour, [0.0, 0.0, 0.0]);
+    }
 
     ball.draw();
 
