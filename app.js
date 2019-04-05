@@ -21,6 +21,8 @@
 // SOFTWARE.
 
 var main = function(){
+
+  // Some game variables
   var maxBacteria = 10;
   var lives = 2;
   var bacRemaining = 20;
@@ -28,6 +30,7 @@ var main = function(){
   var bacAlive = 0;
   var clickedPoints = [];
   var gameIsLit = true; //🔥
+  let bacterium = [];
   var canvas = document.getElementById('game-surface');
 
   // Create 2D Canvas for text
@@ -48,6 +51,7 @@ var main = function(){
 
   let sphereRes = 5;
 
+  // Centre sphere info
   let arcBall = {
     centre: vec2.fromValues(canvas.width / 2, canvas.height / 2),
     radius: (Math.min(canvas.width, canvas.height) - 10) / 2.0
@@ -67,6 +71,7 @@ var main = function(){
   gl.enable(gl.CULL_FACE);
   gl.cullFace(gl.BACK);
 
+  // Uniforms and attributes
   var uniforms = [
     "modelMatrix",
     "viewMatrix",
@@ -86,10 +91,10 @@ var main = function(){
   var attributes = [
     "point",
     "colour",
-
     "normal"
   ];
 
+  // Create GL environment using predefined Initialization functions (too lazy to initialize it myself)
   let glEnv = new GLEnvironment(gl,
       vertexShaderCode, fragmentShaderCode,
       uniforms, attributes);
@@ -97,8 +102,8 @@ var main = function(){
   gl.useProgram(glEnv.shader);
   gl.uniform1f(glEnv.uniforms.one_colour, 0.0);
 
+  // Create centre sphere
   let ball = new Sphere(glEnv, sphereRes);
-  let bacterium = [];
 
   // View Matrix Initialization
   let lookFrom = [0.0, 0.0, 3.0];
@@ -119,6 +124,7 @@ var main = function(){
   let projectionMatrix = mat4.create();
   mat4.perspective(projectionMatrix, fov, aspect, near, far);
 
+  // Create set of ids for the bacterium
   let bacteriumIds = new Set();
   for (var i = 0; i < maxBacteria; i++) {
     bacteriumIds.add(i + 2);
@@ -131,6 +137,7 @@ var main = function(){
 
   var idIterate = bacteriumIds.entries();
 
+  // Assign colours to each bacterium id
   for (let i = 0; i < bacteriumIds.size; i++) {
     let hue =  i * 360.0 / bacteriumIds.size;
 
@@ -152,6 +159,7 @@ var main = function(){
   document.oncontextmenu = function() {
     return false;
   }
+  // Button for toggling lighting
   document.getElementById("lighting").onclick = function(e) {toggleLighting(e)};
 
   function toggleLighting(e) {
@@ -168,6 +176,7 @@ var main = function(){
 
   draw();
 
+  // Draw Function
   function draw() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -187,6 +196,7 @@ var main = function(){
     bacterium.forEach(function(bacteria){bacteria.draw();});
   }
 
+  // False draw function used for hit detection
   function falseDraw() {
     gl.uniform1f(glEnv.uniforms.one_colour, 1.0);
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -196,19 +206,23 @@ var main = function(){
                   clearColor[2],
                   clearColor[3]);
     gl.uniform1f(glEnv.uniforms.one_colour, 0.0);
-}
-    function nextId() {
-      let bucket = Array.from(bacteriumIds);
-      let id = bucket[Math.floor(Math.random() * bucket.length)];
+  }
 
-      bacteriumIds.delete(id);
-      return id;
-    }
+  // Getting the next id from the bacteriumIds
+  function nextId() {
+    let bucket = Array.from(bacteriumIds);
+    let id = bucket[Math.floor(Math.random() * bucket.length)];
 
+    bacteriumIds.delete(id);
+    return id;
+  }
+
+  // Function to spawn bacterium
   function spawnBacteria() {
     let frequency = 64;
     let radius = 0.05;
 
+    // Chance based on frequency to spawn bacteria
     if (Math.random() < 1.0 / frequency && bacterium.length < maxBacteria) {
       let r = vec3.fromValues(Math.random() - 0.5,
                               Math.random() - 0.5,
@@ -218,7 +232,8 @@ var main = function(){
       let id = nextId();
       let colours = bacColMap.get(id);
 
-      if(colours){
+      // If colours is just a lazy bug fix for colours sometimes being unfdefined
+      if(colours) {
         let bacteria = new Sphere(glEnv,
                                   sphereRes,
                                   r,
@@ -247,6 +262,7 @@ var main = function(){
     }
   }
 
+  // Function to grow bacteria on each tick
   function growBacteria() {
     let incScalar = 0.0005;
     let inc = vec3.fromValues(incScalar, incScalar, incScalar);
@@ -259,6 +275,7 @@ var main = function(){
         //vec3.add(bacteria.translation, bacteria.translation, plus);
         bacteria.buildModel();
       }
+      // If bacteria exceeds a limit of r=0.35, destroy and dec lives
       if(bacteria.radius >= 0.35) {
         let id = bacteria.id;
         bacAlive--;
@@ -269,13 +286,15 @@ var main = function(){
     });
   }
 
+  // gameLoop function
   function gameLoop() {
-
+    // Update scoreboard
     document.getElementById('scoreDisplay').innerHTML=score;
 		document.getElementById('bacRemaining').innerHTML=bacRemaining;
 		document.getElementById('lives').innerHTML=lives;
-    if(!winOrLose()){
 
+    // Check for win or lose condition
+    if(!winOrLose()){
       if(bacRemaining>0+bacAlive) {
         spawnBacteria();
       }
@@ -289,6 +308,7 @@ var main = function(){
     }
   }
 
+  // Click function to destroy bacterium
   function click() {
     return function(event) {
       let offset = elementOffset(event.target);
@@ -327,6 +347,7 @@ var main = function(){
     };
   }
 
+  // Mouse down function used for camera movement around sphere
   function mouseDown() {
     return function(event) {
       if (event.button == 2){
@@ -355,6 +376,7 @@ var main = function(){
     }
   }
 
+  // The mouse move function for camera movement
   function mouseMove() {
     return function(event) {
       if ((event.buttons & 2) == 2 && arcBall.start != null) {
@@ -405,15 +427,16 @@ var main = function(){
     }
   }
 
+  // Mouse up function
   function mouseUp() {
     return function(event) {
-      console.log(clickedPoints);
       if ((event.button & 2) == 2){
         arcBall.start = undefined;
       }
     }
   }
 
+  // Function to check for collision each tick
   function collisionCheck() {
     if(bacterium.length > 1) {
       for(let i = 0; i < bacterium.length - 2; i++) {
@@ -432,6 +455,7 @@ var main = function(){
       }
     }
 
+  // Function to update the floating score text
   function updateText() {
     for(i in clickedPoints) {
       let text = clickedPoints[i];
@@ -450,6 +474,7 @@ var main = function(){
     }
   }
 
+  // Function to move and shrink bacteria being consumed by others
   function consumeBacteria() {
     let decScalar = -0.0030;
     let dec = vec3.fromValues(decScalar, decScalar, decScalar);
@@ -472,6 +497,7 @@ var main = function(){
     }
   }
 
+  // Checks for win or lose depending on the bacteria remaining or lives remaining
   function winOrLose() {
     if(bacRemaining <= 0) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -572,10 +598,12 @@ function elementOffset(element) {
   return {x:x, y:y};
 }
 
+// Returns distance between two points in 3D space
 function distance3D(vec1, vec2) {
   return Math.sqrt(Math.pow(vec2[0]-vec1[0], 2) + Math.pow(vec2[1]-vec1[1], 2) + Math.pow(vec2[2]-vec1[2], 2))
 }
 
+// Normalize a vector between two points in 3D space
 function normalize3D(vec1, vec2) {
   let m = distance3D(vec1, vec2);
   return[((vec1[0]-vec2[0])/m)/400, ((vec1[1]-vec2[1])/m)/400, ((vec1[2]-vec2[2])/m)/400];
